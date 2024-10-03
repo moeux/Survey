@@ -1,0 +1,7 @@
+﻿services:
+  survey:
+    container_name: "survey"
+    image: survey
+    build:
+      context: .
+      dockerfile: Survey/Dockerfile
