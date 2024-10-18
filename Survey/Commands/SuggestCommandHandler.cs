@@ -35,6 +35,20 @@ public class SuggestCommandHandler : ICommandHandler
                 rollingInterval: RollingInterval.Day)
             .CreateLogger()
             .ForContext<SuggestCommandHandler>();
+
+        if (Directory.Exists(_iconsPath))
+        {
+            _logger.Information("Icons directory already existing, skipping creation");
+        }
+        else
+        {
+            var directoryInfo = Directory.CreateDirectory(_iconsPath);
+
+            if (directoryInfo.Exists)
+                _logger.Information("Created icons directory successfully");
+            else
+                _logger.Error("Failed to create icons directory");
+        }
     }
 
     public string CommandName => "suggest";
@@ -74,7 +88,7 @@ public class SuggestCommandHandler : ICommandHandler
 
         if (icon is { Size: <= MaxSize } && icon.ContentType.StartsWith("image") && path is not null)
         {
-            logger.Information("Saving image (.{@ContentType}, {@Size} bytes) to {@Path}",
+            logger.Information("Saving image ({@ContentType}, {@Size} bytes) to {@Path}",
                 icon.ContentType, icon.Size, path);
 
             await SaveImageAsync(icon.Url, path);
