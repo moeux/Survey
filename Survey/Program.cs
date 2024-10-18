@@ -5,6 +5,8 @@ using Discord.WebSocket;
 using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.SystemConsole.Themes;
+using Survey.Commands;
+using Survey.Database;
 
 namespace Survey;
 
@@ -36,15 +38,18 @@ internal static class Program
             return;
         }
 
-        InitializeDiscordClient();
+        await using (var context = new DatabaseContext())
+        {
+            var isCreated = await context.Database.EnsureCreatedAsync();
+            Logger.Information(isCreated ? "Database has been created" : "Database already exists, skipping creation");
+        }
 
-        await Client.LoginAsync(TokenType.Bot, Token);
-        await Client.StartAsync();
+        await InitializeDiscordClient();
 
         await Task.Delay(Timeout.Infinite);
     }
 
-    private static void InitializeDiscordClient()
+    private static async Task InitializeDiscordClient()
     {
         Client.Log += message =>
         {
@@ -83,8 +88,11 @@ internal static class Program
         };
         Client.Ready += async () =>
         {
-            await Client.SetCustomStatusAsync("Ready for takeoff!");
+            await Client.SetCustomStatusAsync("Loading surveys..");
             await Client.SetStatusAsync(UserStatus.DoNotDisturb);
         };
+
+        await Client.LoginAsync(TokenType.Bot, Token);
+        await Client.StartAsync();
     }
 }
