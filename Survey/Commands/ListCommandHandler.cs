@@ -50,12 +50,14 @@ public class ListCommandHandler : ICommandHandler
 
         if (pages.Length == 0) return Task.FromResult("There are no suggestions yet.");
 
-        var index = option is not { Type: ApplicationCommandOptionType.Integer, Value: int input } ? 0 : input - 1;
+        var index = option is not { Type: ApplicationCommandOptionType.Integer, Value: long input }
+            ? 0
+            : (int)input - 1;
         index = Math.Min(pages.Length - 1, Math.Max(0, index));
         var response = string.Join(
-            Environment.NewLine,
-            pages[index].Select((suggestion, i) => FormatSuggestion(i + 1, suggestion))
-        );
+                Environment.NewLine,
+                pages[index].Select((suggestion, i) => FormatSuggestion(i + 1, suggestion))
+            ) + Environment.NewLine + $"**Page {index + 1}/{pages.Length}**";
 
         return Task.FromResult(Truncate(response, MaxMessageLength));
     }
