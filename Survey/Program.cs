@@ -13,6 +13,7 @@ namespace Survey;
 internal static class Program
 {
     private static readonly string CommandPath = EnvironmentUtils.GetVariable("SURVEY_COMMAND_PATH", "config");
+    private static readonly string IconsPath = EnvironmentUtils.GetVariable("SURVEY_ICONS_PATH", "icons");
     private static readonly string LogPath = EnvironmentUtils.GetVariable("SURVEY_LOG_FILE", "survey-.log");
     private static readonly string Token = EnvironmentUtils.GetVariable("SURVEY_DISCORD_TOKEN");
 
@@ -83,7 +84,11 @@ internal static class Program
         Client.Ready += () => Client.CreateSlashCommands(CommandPath);
         Client.Ready += () =>
         {
+            CommandHandler.Register(new SuggestCommandHandler(IconsPath));
+            CommandHandler.Register(new ListCommandHandler());
+
             Client.SlashCommandExecuted += command => CommandHandler.HandleAsync(command);
+
             return Task.CompletedTask;
         };
         Client.Ready += async () =>
