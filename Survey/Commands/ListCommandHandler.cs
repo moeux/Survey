@@ -15,7 +15,7 @@ public class ListCommandHandler(DiscordSocketClient client) : ICommandHandler
 
     public async Task HandleAsync(ILogger logger, SocketSlashCommand command)
     {
-        await command.DeferAsync();
+        await command.DeferAsync(ephemeral: true);
 
         var suggestions = DatabaseHelper.GetSuggestions().ToList();
         suggestions.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.InvariantCulture));
