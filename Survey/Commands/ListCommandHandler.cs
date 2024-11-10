@@ -38,9 +38,10 @@ public class ListCommandHandler(DiscordSocketClient client) : ICommandHandler
             {
                 var user = await client.GetUserAsync(suggestion.UserId);
                 var embed = new EmbedBuilder()
-                    .WithTitle($"{i + DefaultChunkSize * index + 1}. {suggestion.Name}")
+                    .WithTitle(suggestion.Name)
                     .WithAuthor(user)
                     .WithColor(Color.Blue)
+                    .WithFooter($"Suggestion #{i + DefaultChunkSize * index + 1}")
                     .WithTimestamp(suggestion.CreatedAt)
                     .AddField("Minimum Players", suggestion.Minimum, true)
                     .AddField("Maximum Players", suggestion.Maximum, true);
