@@ -13,7 +13,6 @@ namespace Survey;
 internal static class Program
 {
     private static readonly string CommandPath = EnvironmentUtils.GetVariable("SURVEY_COMMAND_PATH", "config");
-    private static readonly string IconsPath = EnvironmentUtils.GetVariable("SURVEY_ICONS_PATH", "icons");
     private static readonly string LogPath = EnvironmentUtils.GetVariable("SURVEY_LOG_FILE", "survey-.log");
     private static readonly string Token = EnvironmentUtils.GetVariable("SURVEY_DISCORD_TOKEN");
 
@@ -29,7 +28,7 @@ internal static class Program
         .WriteTo.File(LogPath, rollingInterval: RollingInterval.Day)
         .CreateLogger();
 
-    private static readonly DefaultCommandHandler CommandHandler = new(logPath: LogPath);
+    private static readonly DefaultCommandRouter CommandRouter = new(logPath: LogPath);
 
     private static async Task Main()
     {
@@ -81,13 +80,13 @@ internal static class Program
 
             return Task.CompletedTask;
         };
-        Client.Ready += () => Client.CreateSlashCommands(CommandPath);
+        Client.Ready += () => Client.CreateSlashCommandsAsync(CommandPath);
         Client.Ready += () =>
         {
-            CommandHandler.Register(new SuggestCommandHandler(IconsPath));
-            CommandHandler.Register(new ListCommandHandler());
+            CommandRouter.Register(new SuggestCommandHandler());
+            CommandRouter.Register(new ListCommandHandler(Client));
 
-            Client.SlashCommandExecuted += command => CommandHandler.HandleAsync(command);
+            Client.SlashCommandExecuted += command => CommandRouter.HandleAsync(command);
 
             return Task.CompletedTask;
         };
