@@ -1,87 +1,58 @@
 using System.Collections.Immutable;
-using System.Text;
 using AutoCommand.Handler;
-using AutoCommand.Utils;
 using Discord;
 using Discord.WebSocket;
 using Serilog;
-using Serilog.Sinks.SystemConsole.Themes;
 using Survey.Database;
-using Survey.Database.Models;
 
 namespace Survey.Commands;
 
-public class ListCommandHandler : ICommandHandler
+public class ListCommandHandler(DiscordSocketClient client) : ICommandHandler
 {
     private const int DefaultChunkSize = 10;
-    private const int MaxMessageLength = 2000;
-    private readonly ILogger _logger;
-
-    public ListCommandHandler()
-    {
-        _logger = new LoggerConfiguration()
-            .Destructure.ByTransformingWhere<dynamic>(type => typeof(SocketUser).IsAssignableFrom(type),
-                user => new { user.Id, user.Username })
-            .Destructure.ByTransforming<SocketSlashCommand>(command => new { command.Id, command.CommandName })
-            .Enrich.FromLogContext()
-            .WriteTo.Console(
-                theme: AnsiConsoleTheme.Literate,
-                outputTemplate:
-                "[{Timestamp:HH:mm:ss} {Level:u3}] {Properties:j}{NewLine}{Message:lj}{NewLine}{Exception}")
-            .WriteTo.File(
-                EnvironmentUtils.GetVariable("ROCKET_LOG_FILE", "rocket-.log"),
-                outputTemplate:
-                "[{Timestamp:HH:mm:ss} {Level:u3}] {Properties:j}{NewLine}{Message:lj}{NewLine}{Exception}",
-                rollingInterval: RollingInterval.Day)
-            .CreateLogger()
-            .ForContext<SuggestCommandHandler>();
-    }
 
     public string CommandName => "list";
-    public bool IsLongRunning => false;
 
-    public Task<string> HandleAsync(SocketSlashCommand command)
+    public async Task HandleAsync(ILogger logger, SocketSlashCommand command)
     {
-        var logger = _logger.ForContext("Token", command.Token);
-        var pages = DatabaseHelper.GetSuggestions().Chunk(DefaultChunkSize).ToImmutableArray();
+        await command.DeferAsync();
+
+        var suggestions = DatabaseHelper.GetSuggestions().ToList();
+        suggestions.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.InvariantCulture));
+        var pages = suggestions.Chunk(DefaultChunkSize).ToImmutableArray();
         var option = command.Data.Options.FirstOrDefault();
 
         logger.Information("User {@User} executed command {@Command}", command.User, command);
 
-        if (pages.Length == 0) return Task.FromResult("There are no suggestions yet.");
+        if (pages.Length == 0)
+        {
+            await command.FollowupWithEmbed("There are no suggestions yet.", Color.Red);
+            return;
+        }
 
-        var index = option is not { Type: ApplicationCommandOptionType.Integer, Value: long input }
-            ? 0
-            : (int)input - 1;
+        var index = option is { Type: ApplicationCommandOptionType.Integer, Value: long input } ? (int)input - 1 : 0;
         index = Math.Min(pages.Length - 1, Math.Max(0, index));
-        var response = string.Join(
-                Environment.NewLine,
-                pages[index].Select((suggestion, i) => FormatSuggestion(i + 1, suggestion))
-            ) + Environment.NewLine + $"**Page {index + 1}/{pages.Length}**";
 
-        return Task.FromResult(Truncate(response, MaxMessageLength));
-    }
+        var embeds = await Task.WhenAll(
+            pages[index].Select(async (suggestion, i) =>
+            {
+                var user = await client.GetUserAsync(suggestion.UserId);
+                var embed = new EmbedBuilder()
+                    .WithTitle($"{i + DefaultChunkSize * index + 1}. {suggestion.Name}")
+                    .WithAuthor(user)
+                    .WithColor(Color.Blue)
+                    .WithTimestamp(suggestion.CreatedAt)
+                    .AddField("Minimum Players", suggestion.Minimum, true)
+                    .AddField("Maximum Players", suggestion.Maximum, true);
 
-    private static string FormatSuggestion(int index, Suggestion suggestion)
-    {
-        var builder = new StringBuilder($"{index}. {suggestion.Name} ");
+                if (!string.IsNullOrWhiteSpace(suggestion.Note)) embed.WithDescription(suggestion.Note);
 
-        builder.Append($"({suggestion.Minimum}");
-        if (suggestion.Minimum != suggestion.Maximum) builder.Append($"-{suggestion.Maximum}");
-        builder.Append(" Players)");
+                if (!string.IsNullOrWhiteSpace(suggestion.IconUrl)) embed.WithThumbnailUrl(suggestion.IconUrl);
 
-        if (!string.IsNullOrWhiteSpace(suggestion.Note))
-            builder.AppendLine()
-                .Append('\t')
-                .Append($"{suggestion.Note}");
+                return embed.Build();
+            })
+        );
 
-        return builder.ToString();
-    }
-
-    private static string Truncate(string str, int length, int padding = 2)
-    {
-        if (string.IsNullOrWhiteSpace(str) || str.Length <= length) return str;
-
-        return str[..(length - padding)].PadRight(padding, '.');
+        await command.FollowupAsync(embeds: embeds, ephemeral: true);
     }
 }
