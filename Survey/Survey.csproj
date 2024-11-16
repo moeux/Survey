@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoCommand" Version="1.0.1" />
+        <PackageReference Include="AutoCommand" Version="1.0.1"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8"/>
     </ItemGroup>
 
