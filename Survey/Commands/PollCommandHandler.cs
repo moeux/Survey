@@ -2,16 +2,13 @@ using AutoCommand.Handler;
 using Discord;
 using Discord.WebSocket;
 using Serilog;
+using Survey.Configuration;
 using Survey.Database;
 
 namespace Survey.Commands;
 
 public class PollCommandHandler : ICommandHandler
 {
-    private const string SelectMenuSmallId = "poll-creator-select-menu-small";
-    private const string SelectMenuMediumId = "poll-creator-select-menu-mid";
-    private const string SelectMenuLargeId = "poll-creator-select-menu-large";
-    private const string CreateButtonId = "poll-creator-button";
     public string CommandName => "poll";
 
     public async Task HandleAsync(ILogger logger, SocketSlashCommand command)
@@ -32,11 +29,11 @@ public class PollCommandHandler : ICommandHandler
             return;
         }
 
-        var button = ButtonBuilder.CreateSuccessButton("Create", CreateButtonId, new Emoji("\ud83d\udcdd"));
+        var button = ButtonBuilder.CreateSuccessButton("Create", CustomIds.CreateButtonId, new Emoji("\ud83d\udcdd"));
         var messageComponent = new ComponentBuilder()
-            .WithSelectMenu(CreateSelectMenu(SelectMenuSmallId, 1, 4))
-            .WithSelectMenu(CreateSelectMenu(SelectMenuMediumId, 5, 8), 1)
-            .WithSelectMenu(CreateSelectMenu(SelectMenuLargeId, 9, int.MaxValue), 2)
+            .WithSelectMenu(CreateSelectMenu(CustomIds.SelectMenuSmallId, 1, 4))
+            .WithSelectMenu(CreateSelectMenu(CustomIds.SelectMenuMediumId, 5, 8), 1)
+            .WithSelectMenu(CreateSelectMenu(CustomIds.SelectMenuLargeId, 9, int.MaxValue), 2)
             .WithButton(button, 3)
             .Build();
         var embed = new EmbedBuilder()
