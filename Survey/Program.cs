@@ -85,6 +85,7 @@ internal static class Program
         {
             CommandRouter.Register(new SuggestCommandHandler());
             CommandRouter.Register(new ListCommandHandler(Client));
+            CommandRouter.Register(new PollCommandHandler());
 
             Client.SlashCommandExecuted += command => CommandRouter.HandleAsync(command);
 
