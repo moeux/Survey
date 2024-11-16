@@ -29,36 +29,38 @@ public class SuggestCommandHandler : ICommandHandler
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            await command.FollowupWithEmbed("Please provide a name.", Color.Red);
+            await command.FollowupWithEmbedAsync("Please provide a name.", Color.Red);
             return;
         }
 
         if (minimum <= 0)
         {
-            await command.FollowupWithEmbed("Please provide a valid minimum amount of players required.", Color.Red);
+            await command.FollowupWithEmbedAsync("Please provide a valid minimum amount of players required.",
+                Color.Red);
             return;
         }
 
         if (maximum <= 0 || maximum < minimum || maximum >= 100)
         {
-            await command.FollowupWithEmbed("Please provide a valid maximum amount of players possible.", Color.Red);
+            await command.FollowupWithEmbedAsync("Please provide a valid maximum amount of players possible.",
+                Color.Red);
             return;
         }
 
         if (DatabaseHelper.GetSuggestions().Contains(suggestion))
         {
-            await command.FollowupWithEmbed("This suggestion has already been made.", Color.Red);
+            await command.FollowupWithEmbedAsync("This suggestion has already been made.", Color.Red);
             return;
         }
 
         if (!DatabaseHelper.AddSuggestion(suggestion))
         {
-            await command.FollowupWithEmbed(
+            await command.FollowupWithEmbedAsync(
                 "Something went wrong while saving your suggestion, please try again later.", Color.Red);
             return;
         }
 
-        await command.FollowupWithEmbed("Your suggestion has been saved successfully, thank you!", Color.Green);
+        await command.FollowupWithEmbedAsync("Your suggestion has been saved successfully, thank you!", Color.Green);
     }
 
     private static T? GetOption<T>(

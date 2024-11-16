@@ -15,7 +15,7 @@ public class ListCommandHandler(DiscordSocketClient client) : ICommandHandler
 
     public async Task HandleAsync(ILogger logger, SocketSlashCommand command)
     {
-        await command.DeferAsync(ephemeral: true);
+        await command.DeferAsync(true);
 
         var suggestions = DatabaseHelper.GetSuggestions().ToList();
         suggestions.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.InvariantCulture));
@@ -26,7 +26,7 @@ public class ListCommandHandler(DiscordSocketClient client) : ICommandHandler
 
         if (pages.Length == 0)
         {
-            await command.FollowupWithEmbed("There are no suggestions yet.", Color.Red);
+            await command.FollowupWithEmbedAsync("There are no suggestions yet.", Color.Red);
             return;
         }
 

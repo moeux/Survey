@@ -6,7 +6,7 @@ namespace Survey;
 
 public static class SocketSlashCommandExtensions
 {
-    public static Task<RestFollowupMessage> FollowupWithEmbed(
+    public static Task<RestFollowupMessage> FollowupWithEmbedAsync(
         this SocketSlashCommand command, string description, Color color)
     {
         var embed = new EmbedBuilder()
@@ -16,7 +16,7 @@ public static class SocketSlashCommandExtensions
         return command.FollowupAsync(ephemeral: true, embed: embed);
     }
 
-    public static Task RespondWithEmbed(
+    public static Task RespondWithEmbedAsync(
         this SocketSlashCommand command, string description, Color color)
     {
         var embed = new EmbedBuilder()
